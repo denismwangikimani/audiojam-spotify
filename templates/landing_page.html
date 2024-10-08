@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to AudioJam</title>
+    <!-- Link to favicon -->
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='AudioJam_logo.jpg') }}"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 24px;
+        font-size: 1rem;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        color: #2c3e50;
+        margin-bottom: 20px;
+      }
+
+      p {
+        font-size: 1.2rem;
+        color: #34495e;
+        margin-bottom: 20px;
+      }
+
+      .login-button {
+        display: inline-block;
+        padding: 15px 30px;
+        font-size: 1.2rem;
+        background-color: #1db954;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+        margin-bottom: 40px;
+      }
+
+      .login-button:hover {
+        background-color: #1ed760;
+      }
+
+      .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 30px;
+      }
+
+      .card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        width: 300px;
+        text-align: center;
+      }
+
+      .card img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+
+      .card p {
+        font-size: 1.1rem;
+        color: #2980b9;
+        margin: 10px 0;
+      }
+
+      @media (min-width: 768px) {
+        .card-container {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .card-container {
+          flex-direction: column;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        p {
+          font-size: 1rem;
+        }
+
+        .login-button {
+          padding: 12px 24px;
+          font-size: 1rem;
+        }
+
+        .card {
+          margin-bottom: 30px;
+        }
+
+        .card p {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome to MELODIA</h1>
+      <p>
+        Login with your Spotify account to see your top songs, artists, albums,
+        genres, top charts, and more.
+      </p>
+
+      <!-- Login with Spotify button -->
+      <a href="{{ auth_url }}" class="login-button">Login with Spotify</a>
+
+      <!-- Cards Container -->
+      <div class="card-container">
+        <!-- Artist of the Day -->
+        <div class="card">
+          <p>Artist of the Day</p>
+          {% if artist_info.image %}
+          <img src="{{ artist_info.image }}" alt="{{ artist_info.name }}" />
+          {% else %}
+          <p>No image available</p>
+          {% endif %}
+          <p><strong>Name:</strong> {{ artist_info.name }}</p>
+          <!-- <p><strong>Popularity:</strong> {{ artist_info.popularity }}</p> -->
+          <p><strong>Genres:</strong> {{ artist_info.genres }}</p>
+          <p><strong>Followers:</strong> {{ artist_info.followers }}</p>
+        </div>
+
+        <!-- Song of the Day -->
+        <div class="card">
+          <p>Song of the Day</p>
+          {% if song_info.image %}
+          <img src="{{ song_info.image }}" alt="{{ song_info.name }}" />
+          {% else %}
+          <p>No image available</p>
+          {% endif %}
+          <p><strong>Name:</strong> {{ song_info.name }}</p>
+          <p><strong>Artist:</strong> {{ song_info.artist }}</p>
+          <p><strong>Album:</strong> {{ song_info.album }}</p>
+          <!-- <p><strong>Streams:</strong> {{ song_info.streams }}</p> -->
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
