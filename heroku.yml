@@ -1,0 +1,3 @@
+build:
+  docker:
+    web: Dockerfile # This tells Heroku to use your Dockerfile to build the web process.
