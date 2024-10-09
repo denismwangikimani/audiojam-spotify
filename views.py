@@ -46,6 +46,7 @@ def get_song_album_cover_url(song_name, artist_name):
         album_cover_url = results['tracks']['items'][0]['album']['images'][0]['url']
         return album_cover_url
     else:
+        print(f"Album cover not found for {song_name} by {artist_name}")
         return None
 
 @views.route('/')
@@ -141,7 +142,9 @@ def show_top_items():
     
     if selected_song:
         recommendations = recommend_song(selected_song)
+        print(f"Selected Song: {selected_song}, Recommendations: {recommendations}")
         recommended_music_posters = [get_song_album_cover_url(song, music[music['song'] == song]['artist'].values[0]) for song in recommendations]
+        print(f"Posters: {recommended_music_posters}")
         recommendations_with_posters = zip(recommendations, recommended_music_posters)
 
         # Default Spotify logo URL

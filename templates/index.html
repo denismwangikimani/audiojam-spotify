@@ -4,152 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AudioJam</title>
-    <!-- Site Name -->
-    <!-- Link to favicon -->
+    <link rel="stylesheet" href="../static/styles.css" />
     <link
       rel="icon"
       type="image/x-icon"
       href="{{ url_for('static', filename='AudioJam_logo.jpg') }}"
     />
-    <style>
-      /* General Styling */
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 0;
-      }
-      .content {
-        width: 90%;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-      h1,
-      h2 {
-        text-align: center;
-      }
-
-      /* Card Styling */
-      .card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-      }
-      .card ul {
-        list-style-type: none;
-        padding: 0;
-      }
-      .card li {
-        margin: 15px 0;
-        display: flex;
-        align-items: center;
-      }
-      .card img {
-        width: 50px;
-        height: 50px;
-        margin-right: 20px;
-        border-radius: 8px;
-      }
-
-      /* Grid Layout for Billboard and Top Items */
-      .grid-container {
-        display: grid;
-        gap: 20px;
-      }
-
-      /* Responsive grid layout */
-      @media (min-width: 769px) {
-        .grid-container {
-          grid-template-columns: repeat(
-            2,
-            1fr
-          ); /* Two columns on larger screens */
-        }
-      }
-
-      /* Billboard Hot 100 Section */
-      .top-charts {
-        margin-top: 30px;
-      }
-
-      /* Recommendations Styling */
-      .recommendations-section {
-        margin-top: 40px;
-      }
-      .recommendations {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        justify-content: center;
-      }
-      .recommendation {
-        background-color: white;
-        padding: 10px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        width: calc(50% - 10px);
-        text-align: center;
-      }
-      .recommendation img {
-        width: 100%;
-        max-width: 150px;
-        height: auto;
-        margin-bottom: 10px;
-        border-radius: 8px;
-      }
-
-      /* Form Styling */
-      .form-container {
-        display: flex;
-        justify-content: center;
-        margin-top: 30px;
-        flex-wrap: wrap;
-      }
-      select,
-      button {
-        padding: 10px;
-        border-radius: 5px;
-        margin: 5px;
-        border: 1px solid #ccc;
-        width: 100%;
-        max-width: 300px;
-      }
-      button {
-        background-color: #1db954;
-        color: white;
-        border: none;
-        cursor: pointer;
-      }
-      button:hover {
-        background-color: #1ed760;
-      }
-
-      /* Responsive adjustments for smaller screens */
-      @media (max-width: 768px) {
-        .content {
-          width: 95%;
-          padding: 0 10px;
-        }
-
-        .grid-container {
-          grid-template-columns: 1fr; /* Stacked vertically on smaller screens */
-        }
-
-        .card img {
-          width: 40px;
-          height: 40px;
-          margin-right: 10px;
-        }
-
-        .recommendation {
-          width: calc(100% - 10px);
-          margin-bottom: 20px;
-        }
-      }
-    </style>
   </head>
   <body>
     <div class="content">
@@ -194,9 +54,13 @@
         </div>
       </div>
 
-      <!-- Form to select time range -->
+      <!-- Form to select time range and save top tracks to Spotify -->
       <div class="form-container">
-        <form action="{{ url_for('views.show_top_items') }}" method="POST">
+        <form
+          action="{{ url_for('views.show_top_items') }}"
+          method="POST"
+          class="form-flex"
+        >
           <label for="time_range">Select time range for top items:</label>
           <select name="time_range" id="time_range">
             <option value="short_term">Short Term (Last 4 weeks)</option>
@@ -205,9 +69,26 @@
             </option>
             <option value="long_term">Long Term (Several years)</option>
           </select>
-          <button type="submit">Show Top Items</button>
+          <button type="submit">Show The Top Artists and Tracks</button>
+        </form>
+
+        <!-- Save Top Tracks to Spotify Playlist Button -->
+        <form
+          action="{{ url_for('views.show_top_items') }}"
+          method="POST"
+          class="form-flex"
+        >
+          <input type="hidden" name="playlist_type" value="top_tracks" />
+          <button type="submit">Save Top Tracks to Spotify</button>
         </form>
       </div>
+
+      <!-- Display success message if a playlist is created -->
+      {% if success_message %}
+      <div class="card">
+        <p>{{ success_message }}</p>
+      </div>
+      {% endif %}
 
       <!-- User's Top Artists -->
       <div class="top-items">
@@ -275,9 +156,13 @@
         </div>
       </div>
 
-      <!-- Song Recommendation Form -->
+      <!-- Song Recommendation Form and Save Recommended Songs Button -->
       <div class="form-container">
-        <form action="{{ url_for('views.show_top_items') }}" method="POST">
+        <form
+          action="{{ url_for('views.show_top_items') }}"
+          method="POST"
+          class="form-flex"
+        >
           <label for="selected_song">Select a song for recommendations:</label>
           <select name="selected_song" id="selected_song">
             {% for song in music_list %}
@@ -286,16 +171,35 @@
           </select>
           <button type="submit">Show Recommendations</button>
         </form>
+
+        <!-- Save Recommended Songs to Spotify Playlist Button -->
+        <form
+          action="{{ url_for('views.show_top_items') }}"
+          method="POST"
+          class="form-flex"
+        >
+          <input type="hidden" name="playlist_type" value="recommendations" />
+          <button type="submit">
+            Save Recommendations to Spotify
+          </button>
+        </form>
       </div>
+
+      <!-- Display success message if a playlist is created -->
+      {% if success_message %}
+      <div class="card">
+        <p>{{ success_message }}</p>
+      </div>
+      {% endif %}
 
       <!-- Song Recommendations Section -->
       <div class="recommendations-section">
         <h2>Recommended Songs Based on Your Selection</h2>
         <div class="recommendations">
-          {% for rec in recommendations %}
+          {% for rec, poster in recommendations_with_posters %}
           <div class="recommendation">
-            <img src="{{ rec.image_url }}" alt="{{ rec.name }}" />
-            <p><strong>{{ rec.name }}</strong> by {{ rec.artist }}</p>
+            <img src="{{ poster }}" alt="{{ rec }}" />
+            <p><strong>{{ rec }}</strong></p>
           </div>
           {% endfor %}
         </div>
