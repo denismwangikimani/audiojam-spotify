@@ -1,21 +1,23 @@
-# Use Python 3.10 instead of 3.9
-FROM python:3.10-slim
+# Use Alpine as it's a smaller base image
+FROM python:3.10-alpine
 
-# Set the working directory in the container
+# Set work directory
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy only requirements.txt first to leverage Docker cache
+COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
-RUN python -m pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies and clean up in one layer
+RUN pip install --no-cache-dir -r requirements.txt && \
+    find /usr/local -depth \
+    \( \
+    \( -type d -a -name test -o -name tests \) \
+    -o \
+    \( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
+    \) -exec rm -rf '{}' +
 
-# Make port 5000 available to the world outside this container
-EXPOSE 5000
+# Copy the rest of the application
+COPY . .
 
-# Define environment variable
-ENV FLASK_APP=app.py
-
-# Run app.py when the container launches
-CMD ["flask", "run", "--host=0.0.0.0"]
+# Set the command to run the application with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "app:app"]

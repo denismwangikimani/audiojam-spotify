@@ -8,3 +8,5 @@ __pycache__
 env/
 venv/
 audiojam-env/
+spotify_10000_sample.csv
+.cache/
