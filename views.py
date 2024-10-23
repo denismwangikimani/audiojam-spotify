@@ -1,12 +1,17 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request
+#import requests
 import spotipy
 import billboard
 import pickle
 import os
 import random
+import musicbrainzngs # Import MusicBrainz API client
 from config import sp_oauth 
 
 views = Blueprint('views', __name__)
+
+# Set up MusicBrainz client
+musicbrainzngs.set_useragent("AudioJamApp", "1.0", "denismwangi10471@gmail.com")
 
 # Get the base directory of the current script
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -32,75 +37,76 @@ def recommend_song(song_name):
     
     return recommended_songs
 
-# Function to get the album cover URL of a song
-def get_song_album_cover_url(song_name, artist_name):
-    # Set up Spotipy client
-    sp = spotipy.Spotify(auth_manager=sp_oauth)
+# Function to get artist information from MusicBrainz
+def get_random_artist_info():
+    result = musicbrainzngs.search_artists(query='a', limit=100)  # Use a broad query
+    artists = result['artist-list']
     
-    # Search for the song on Spotify
-    query = f"track:{song_name} artist:{artist_name}"
-    results = sp.search(q=query, type='track', limit=1)
+    if artists:
+        random_artist = random.choice(artists)  # Pick a random artist
+        artist_info = {
+            'name': random_artist['name'],
+            'id': random_artist['id'],
+            'country': random_artist.get('country', 'Unknown'),
+            'begin_date': random_artist.get('begin', 'Unknown'),
+            'end_date': random_artist.get('end', 'Unknown'),
+            'image_url': random_artist.get('images', [{}])[0].get('image')  # Get the first image
+        }
+        return artist_info
+    return None
+
+def get_random_song_info():
+    result = musicbrainzngs.search_recordings(query='a', limit=100)  # Use a broad query
+    recordings = result['recording-list']
     
-    # Extract the album cover URL if the song is found
-    if results['tracks']['items']:
-        album_cover_url = results['tracks']['items'][0]['album']['images'][0]['url']
-        return album_cover_url
-    else:
-        print(f"Album cover not found for {song_name} by {artist_name}")
-        return None
+    if recordings:
+        random_song = random.choice(recordings)  # Pick a random song
+        song_info = {
+            'title': random_song['title'],
+            'id': random_song['id'],
+            'artist': ', '.join([artist['name'] for artist in random_song.get('artist-credit', [])]),
+            'length': random_song.get('length', 'Unknown'),
+            'release_date': random_song.get('first-release-date', 'Unknown'),
+            'image_url': random_song.get('release-group', {}).get('images', [{}])[0].get('image')  # Get the first image
+        }
+        return song_info
+    return None
 
 @views.route('/')
 def landing_page():
+    # Get the authorization URL from Spotify OAuth
     auth_url = sp_oauth.get_authorize_url()
+    artist_info = get_random_artist_info()
+    song_info = get_random_song_info()  # Get random song info
+    return render_template("landing_page.html",auth_url=auth_url, artist_info=artist_info, song_info=song_info)
 
-    # Set up Spotipy client
-    sp = spotipy.Spotify(auth_manager=sp_oauth)
+def get_song_album_cover_url(song_name, artist_name, sp=None):
+    """
+    Get album cover URL for a song using Spotify API.
+    Returns a default image URL if the song isn't found.
+    """
+    default_image = url_for('static', filename='default_album.png')
     
-    # Fetch a random artist from the user's top artists
-    top_artists = sp.current_user_top_artists(limit=50)['items']
+    if not sp:
+        token_info = session.get('token_info', None)
+        if not token_info:
+            return default_image
+        sp = spotipy.Spotify(auth=token_info['access_token'])
     
-    if top_artists:
-        artist_of_the_day = random.choice(top_artists)
-        artist_info = {
-            "name": artist_of_the_day['name'],
-            "image": artist_of_the_day['images'][0]['url'] if artist_of_the_day['images'] else None,
-            "popularity": artist_of_the_day['popularity'],
-            "genres": ", ".join(artist_of_the_day['genres']),
-            "followers": artist_of_the_day['followers']['total']
-        }
-    else:
-        artist_info = {
-            "name": "Unknown Artist",
-            "image": None,
-            "popularity": "N/A",
-            "genres": "N/A",
-            "followers": "N/A"
-        }
-
-    # Fetch a random song from the user's top tracks
-    top_tracks = sp.current_user_top_tracks(limit=50)['items']
+    try:
+        # Search for the track on Spotify
+        query = f"track:{song_name} artist:{artist_name}"
+        results = sp.search(q=query, type='track', limit=1)
+        
+        if results['tracks']['items']:
+            # Get the album cover from the first result
+            images = results['tracks']['items'][0]['album']['images']
+            if images:
+                return images[0]['url']  # Return the largest image URL
+    except Exception as e:
+        print(f"Error getting album cover for {song_name}: {e}")
     
-    if top_tracks:
-        song_of_the_day = random.choice(top_tracks)
-        song_info = {
-            "name": song_of_the_day['name'],
-            "artist": ", ".join([artist['name'] for artist in song_of_the_day['artists']]),
-            "album": song_of_the_day['album']['name'],
-            "image": song_of_the_day['album']['images'][0]['url'] if song_of_the_day['album']['images'] else None,
-            "streams": song_of_the_day['popularity'], 
-            "genres": "N/A"  
-        }
-    else:
-        song_info = {
-            "name": "Unknown Song",
-            "artist": "Unknown Artist",
-            "album": "N/A",
-            "image": None,
-            "streams": "N/A",
-            "genres": "N/A"
-        }
-
-    return render_template('landing_page.html', auth_url=auth_url, artist_info=artist_info, song_info=song_info)
+    return default_image
 
 @views.route('/show_top_items', methods=['GET', 'POST'])
 def show_top_items():
@@ -126,7 +132,7 @@ def show_top_items():
         "peak": song.peakPos
     } for song in chart[:10]]
     
-    # Handle time range selection for Spotify top items (short_term, medium_term, long_term)
+    # Handle time range selection
     time_range = request.form.get('time_range', 'medium_term')
 
     # Fetch user's top artists and tracks
@@ -143,12 +149,16 @@ def show_top_items():
     if selected_song:
         recommendations = recommend_song(selected_song)
         print(f"Selected Song: {selected_song}, Recommendations: {recommendations}")
-        recommended_music_posters = [get_song_album_cover_url(song, music[music['song'] == song]['artist'].values[0]) for song in recommendations]
-        print(f"Posters: {recommended_music_posters}")
-        recommendations_with_posters = zip(recommendations, recommended_music_posters)
-
-        # Default Spotify logo URL
-        #default_spotify_logo_url = 'images/spotify-logo.png'
+        
+        # Get album covers for recommended songs using the same Spotify client
+        recommendations_with_posters = [
+            (song, get_song_album_cover_url(
+                song, 
+                music[music['song'] == song]['artist'].values[0],
+                sp
+            )) 
+            for song in recommendations
+        ]
 
     # Handle playlist creation logic
     playlist_type = request.form.get('playlist_type')
@@ -173,7 +183,6 @@ def show_top_items():
         else:
             return redirect(url_for('views.show_top_items'))
     
-
         # Create the new playlist
         new_playlist = sp.user_playlist_create(user_id, playlist_name, public=False)
         playlist_id = new_playlist['id']
@@ -184,4 +193,13 @@ def show_top_items():
         # Set success message
         success_message = f"Successfully created playlist: {playlist_name}"
 
-    return render_template('index.html', username=username, top_chart_songs=top_chart_songs, artists=top_artists, tracks=top_tracks, music_list=music_list, recommendations_with_posters=recommendations_with_posters, success_message=success_message)
+    return render_template(
+        'index.html',
+        username=username,
+        top_chart_songs=top_chart_songs,
+        artists=top_artists,
+        tracks=top_tracks,
+        music_list=music_list,
+        recommendations_with_posters=recommendations_with_posters,
+        success_message=success_message
+    )

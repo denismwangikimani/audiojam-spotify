@@ -81,87 +81,64 @@
       }
 
       .card p {
-        font-size: 1.1rem;
-        color: #2980b9;
-        margin: 10px 0;
+        margin: 0;
+        padding: 5px 0;
       }
 
-      @media (min-width: 768px) {
-        .card-container {
-          flex-direction: row;
-          justify-content: space-between;
-        }
+      .artist-info {
+        margin-bottom: 20px;
       }
 
-      @media (max-width: 767px) {
-        .card-container {
-          flex-direction: column;
-        }
-
-        h1 {
-          font-size: 2rem;
-        }
-
-        p {
-          font-size: 1rem;
-        }
-
-        .login-button {
-          padding: 12px 24px;
-          font-size: 1rem;
-        }
-
-        .card {
-          margin-bottom: 30px;
-        }
-
-        .card p {
-          font-size: 1rem;
-        }
+      footer {
+        margin-top: 20px;
+        padding: 10px;
+        font-size: 0.8rem;
+        color: #7f8c8d;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Welcome to MELODIA</h1>
-      <p>
-        Login with your Spotify account to see your top songs, artists, albums,
-        genres, top charts, and more.
-      </p>
+      <h1>Welcome to AudioJam</h1>
+      <p>Discover your next favorite artist and song!</p>
 
-      <!-- Login with Spotify button -->
+      <!-- Login Button for Spotify -->
       <a href="{{ auth_url }}" class="login-button">Login with Spotify</a>
 
-      <!-- Cards Container -->
+      <!-- Display Artist of the Day (from MusicBrainz) -->
       <div class="card-container">
         <!-- Artist of the Day -->
-        <div class="card">
-          <p>Artist of the Day</p>
-          {% if artist_info.image %}
-          <img src="{{ artist_info.image }}" alt="{{ artist_info.name }}" />
+        <div class="card artist-info">
+          <h2>Artist of the Day</h2>
+          {% if artist_info.image_url %}
+          <img src="{{ artist_info.image_url }}" alt="{{ artist_info.name }}" />
           {% else %}
           <p>No image available</p>
           {% endif %}
           <p><strong>Name:</strong> {{ artist_info.name }}</p>
-          <!-- <p><strong>Popularity:</strong> {{ artist_info.popularity }}</p> -->
-          <p><strong>Genres:</strong> {{ artist_info.genres }}</p>
-          <p><strong>Followers:</strong> {{ artist_info.followers }}</p>
+          <p><strong>Country:</strong> {{ artist_info.country }}</p>
+          <p><strong>Active Since:</strong> {{ artist_info.begin_date }}</p>
+          <p><strong>End Date:</strong> {{ artist_info.end_date }}</p>
         </div>
 
         <!-- Song of the Day -->
-        <div class="card">
-          <p>Song of the Day</p>
-          {% if song_info.image %}
-          <img src="{{ song_info.image }}" alt="{{ song_info.name }}" />
+        <div class="card song-info">
+          <h2>Song of the Day</h2>
+          {% if song_info.image_url %}
+          <img src="{{ song_info.image_url }}" alt="{{ song_info.title }}" />
           {% else %}
           <p>No image available</p>
           {% endif %}
-          <p><strong>Name:</strong> {{ song_info.name }}</p>
+          <p><strong>Song Name:</strong> {{ song_info.title }}</p>
           <p><strong>Artist:</strong> {{ song_info.artist }}</p>
-          <p><strong>Album:</strong> {{ song_info.album }}</p>
-          <!-- <p><strong>Streams:</strong> {{ song_info.streams }}</p> -->
+          <p><strong>Length:</strong> {{ song_info.length }} ms</p>
+          <p><strong>Release Date:</strong> {{ song_info.release_date }}</p>
         </div>
       </div>
+
+      <footer>
+        <p>&copy; 2024 AudioJam</p>
+      </footer>
     </div>
   </body>
 </html>
