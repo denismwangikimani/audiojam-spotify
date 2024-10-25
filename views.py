@@ -122,7 +122,10 @@ def show_top_items():
     username = user_profile['display_name']
 
     # Fetch Billboard Hot 100 Chart
-    chart = billboard.ChartData('hot-100')
+    headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+}
+    chart = billboard.ChartData('hot-100', fetch=True, timeout=25, headers=headers)
     top_chart_songs = [{
         "rank": song.rank,
         "title": song.title,
