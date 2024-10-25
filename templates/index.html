@@ -15,8 +15,8 @@
     <div class="content">
       <h1>Welcome, {{ username }}!</h1>
 
-      <!-- Billboard Hot 100 Section -->
-      <h2>Billboard Hot 100</h2>
+      <!-- Spotify Top Charts -->
+      <h2>Spotify Global Top 50</h2>
       <div class="grid-container top-charts">
         <div class="card">
           <ul>
@@ -26,10 +26,6 @@
               <div>
                 <strong>{{ song.rank }}. {{ song.title }}</strong> by {{
                 song.artist }}
-                <p>
-                  Weeks on Chart: {{ song.weeks }} | Peak Position: {{ song.peak
-                  }}
-                </p>
               </div>
             </li>
             {% endfor %}
@@ -43,10 +39,6 @@
               <div>
                 <strong>{{ song.rank }}. {{ song.title }}</strong> by {{
                 song.artist }}
-                <p>
-                  Weeks on Chart: {{ song.weeks }} | Peak Position: {{ song.peak
-                  }}
-                </p>
               </div>
             </li>
             {% endfor %}
@@ -179,9 +171,7 @@
           class="form-flex"
         >
           <input type="hidden" name="playlist_type" value="recommendations" />
-          <button type="submit">
-            Save Recommendations to Spotify
-          </button>
+          <button type="submit">Save Recommendations to Spotify</button>
         </form>
       </div>
 

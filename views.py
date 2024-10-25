@@ -1,11 +1,10 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request
-#import requests
 import spotipy
-import billboard
+#import billboard
 import pickle
 import os
 import random
-import musicbrainzngs # Import MusicBrainz API client
+import musicbrainzngs
 from config import sp_oauth 
 
 views = Blueprint('views', __name__)
@@ -39,35 +38,35 @@ def recommend_song(song_name):
 
 # Function to get artist information from MusicBrainz
 def get_random_artist_info():
-    result = musicbrainzngs.search_artists(query='a', limit=100)  # Use a broad query
+    result = musicbrainzngs.search_artists(query='a', limit=100)
     artists = result['artist-list']
     
     if artists:
-        random_artist = random.choice(artists)  # Pick a random artist
+        random_artist = random.choice(artists)
         artist_info = {
             'name': random_artist['name'],
             'id': random_artist['id'],
             'country': random_artist.get('country', 'Unknown'),
             'begin_date': random_artist.get('begin', 'Unknown'),
             'end_date': random_artist.get('end', 'Unknown'),
-            'image_url': random_artist.get('images', [{}])[0].get('image')  # Get the first image
+            'image_url': random_artist.get('images', [{}])[0].get('image')
         }
         return artist_info
     return None
 
 def get_random_song_info():
-    result = musicbrainzngs.search_recordings(query='a', limit=100)  # Use a broad query
+    result = musicbrainzngs.search_recordings(query='a', limit=100)
     recordings = result['recording-list']
     
     if recordings:
-        random_song = random.choice(recordings)  # Pick a random song
+        random_song = random.choice(recordings)
         song_info = {
             'title': random_song['title'],
             'id': random_song['id'],
             'artist': ', '.join([artist['name'] for artist in random_song.get('artist-credit', [])]),
             'length': random_song.get('length', 'Unknown'),
             'release_date': random_song.get('first-release-date', 'Unknown'),
-            'image_url': random_song.get('release-group', {}).get('images', [{}])[0].get('image')  # Get the first image
+            'image_url': random_song.get('release-group', {}).get('images', [{}])[0].get('image')
         }
         return song_info
     return None
@@ -77,7 +76,7 @@ def landing_page():
     # Get the authorization URL from Spotify OAuth
     auth_url = sp_oauth.get_authorize_url()
     artist_info = get_random_artist_info()
-    song_info = get_random_song_info()  # Get random song info
+    song_info = get_random_song_info()
     return render_template("landing_page.html",auth_url=auth_url, artist_info=artist_info, song_info=song_info)
 
 def get_song_album_cover_url(song_name, artist_name, sp=None):
@@ -102,7 +101,7 @@ def get_song_album_cover_url(song_name, artist_name, sp=None):
             # Get the album cover from the first result
             images = results['tracks']['items'][0]['album']['images']
             if images:
-                return images[0]['url']  # Return the largest image URL
+                return images[0]['url']
     except Exception as e:
         print(f"Error getting album cover for {song_name}: {e}")
     
@@ -121,19 +120,27 @@ def show_top_items():
     user_profile = sp.current_user()
     username = user_profile['display_name']
 
-    # Fetch Billboard Hot 100 Chart
-    headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-}
-    chart = billboard.ChartData('hot-100', fetch=True, timeout=25, headers=headers)
-    top_chart_songs = [{
-        "rank": song.rank,
-        "title": song.title,
-        "artist": song.artist,
-        "image": song.image,
-        "weeks": song.weeks,
-        "peak": song.peakPos
-    } for song in chart[:10]]
+    # Fetch Spotify Global Top 50 playlist
+    global_top_50_id = '37i9dQZEVXbMDoHDwVN2tF'
+    
+    try:
+        playlist = sp.playlist(global_top_50_id)
+        top_chart_songs = []
+        
+        for idx, track in enumerate(playlist['tracks']['items'][:10], 1):
+            track_info = track['track']
+            song = {
+                "rank": idx,
+                "title": track_info['name'],
+                "artist": track_info['artists'][0]['name'],
+                "image": track_info['album']['images'][0]['url'] if track_info['album']['images'] else None,
+                "weeks": "N/A",
+                "peak": "N/A"  
+            }
+            top_chart_songs.append(song)
+    except Exception as e:
+        print(f"Error fetching Spotify charts: {e}")
+        top_chart_songs = []
     
     # Handle time range selection
     time_range = request.form.get('time_range', 'medium_term')
