@@ -1,16 +1,17 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request
+import requests
 import spotipy
 #import billboard
 import pickle
 import os
 import random
-import musicbrainzngs
-from config import sp_oauth 
+import logging
+from config import sp_oauth, LASTFM_API_KEY, LASTFM_BASE_URL
 
 views = Blueprint('views', __name__)
 
-# Set up MusicBrainz client
-musicbrainzngs.set_useragent("AudioJamApp", "1.0", "denismwangi10471@gmail.com")
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Get the base directory of the current script
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -38,46 +39,159 @@ def recommend_song(song_name):
 
 # Function to get artist information from MusicBrainz
 def get_random_artist_info():
-    result = musicbrainzngs.search_artists(query='a', limit=100)
-    artists = result['artist-list']
-    
-    if artists:
-        random_artist = random.choice(artists)
-        artist_info = {
-            'name': random_artist['name'],
-            'id': random_artist['id'],
-            'country': random_artist.get('country', 'Unknown'),
-            'begin_date': random_artist.get('begin', 'Unknown'),
-            'end_date': random_artist.get('end', 'Unknown'),
-            'image_url': random_artist.get('images', [{}])[0].get('image')
+    """Get random artist information from Last.fm"""
+    try:
+        # Get chart artists
+        params = {
+            'method': 'chart.gettopartists',
+            'api_key': LASTFM_API_KEY,
+            'format': 'json',
+            'limit': 1000
         }
-        return artist_info
-    return None
+        
+        response = requests.get(LASTFM_BASE_URL, params=params)
+        result = response.json()
+        
+        if 'artists' not in result:
+            return None
+            
+        # Select random artist
+        random_artist = random.choice(result['artists']['artist'])
+        artist_name = random_artist['name']
+        
+        # Get detailed artist info
+        params = {
+            'method': 'artist.getInfo',
+            'artist': artist_name,
+            'api_key': LASTFM_API_KEY,
+            'format': 'json',
+            'autocorrect': 1
+        }
+        
+        response = requests.get(LASTFM_BASE_URL, params=params)
+        artist_info = response.json()
+        
+        if 'artist' not in artist_info:
+            return None
+            
+        artist_data = artist_info['artist']
+        
+        return {
+            'name': artist_data['name'],
+            'image_url': artist_data.get('image', [{}])[-1].get('#text'),
+            'bio': artist_data.get('bio', {}).get('summary', '').split('<a href')[0],
+            'listeners': artist_data.get('stats', {}).get('listeners', 'Unknown'),
+            'playcount': artist_data.get('stats', {}).get('playcount', 'Unknown'),
+            'tags': [tag['name'] for tag in artist_data.get('tags', {}).get('tag', [])[:3]]
+        }
+    except Exception as e:
+        logger.error(f"Error getting random artist: {e}")
+        return None
 
 def get_random_song_info():
-    result = musicbrainzngs.search_recordings(query='a', limit=100)
-    recordings = result['recording-list']
-    
-    if recordings:
-        random_song = random.choice(recordings)
-        song_info = {
-            'title': random_song['title'],
-            'id': random_song['id'],
-            'artist': ', '.join([artist['name'] for artist in random_song.get('artist-credit', [])]),
-            'length': random_song.get('length', 'Unknown'),
-            'release_date': random_song.get('first-release-date', 'Unknown'),
-            'image_url': random_song.get('release-group', {}).get('images', [{}])[0].get('image')
+    """Get random song information from Last.fm"""
+    try:
+        # Get chart tracks
+        params = {
+            'method': 'chart.gettoptracks',
+            'api_key': LASTFM_API_KEY,
+            'format': 'json',
+            'limit': 1000
         }
-        return song_info
-    return None
+        
+        response = requests.get(LASTFM_BASE_URL, params=params)
+        result = response.json()
+        
+        if 'tracks' not in result:
+            return None
+            
+        # Select random track
+        random_track = random.choice(result['tracks']['track'])
+        track_name = random_track['name']
+        artist_name = random_track['artist']['name']
+        
+        # Get detailed track info
+        params = {
+            'method': 'track.getInfo',
+            'track': track_name,
+            'artist': artist_name,
+            'api_key': LASTFM_API_KEY,
+            'format': 'json',
+            'autocorrect': 1
+        }
+        
+        response = requests.get(LASTFM_BASE_URL, params=params)
+        track_info = response.json()
+        
+        if 'track' not in track_info:
+            return None
+            
+        track_data = track_info['track']
+        
+        # Get album info if available
+        album_info = track_data.get('album', {})
+        
+        return {
+            'title': track_data['name'],
+            'artist': track_data['artist']['name'],
+            'image_url': album_info.get('image', [{}])[-1].get('#text', random_track.get('image', [{}])[-1].get('#text')),
+            'album': album_info.get('title', 'Unknown'),
+            'listeners': track_data.get('listeners', 'Unknown'),
+            'playcount': track_data.get('playcount', 'Unknown'),
+            'duration': int(track_data.get('duration', 0)) // 1000,  # Convert to seconds
+            'tags': [tag['name'] for tag in track_data.get('toptags', {}).get('tag', [])[:3]]
+        }
+    except Exception as e:
+        logger.error(f"Error getting random song: {e}")
+        return None
+
+def get_fallback_data(type_='artist'):
+    """Provide fallback data if API fails"""
+    if type_ == 'artist':
+        return {
+            'name': 'Artist Unavailable',
+            'image_url': url_for('static', filename='default_artist.jpg'),
+            'bio': 'Artist information temporarily unavailable. Please try refreshing the page.',
+            'listeners': 'Unknown',
+            'playcount': 'Unknown',
+            'tags': []
+        }
+    else:
+        return {
+            'title': 'Song Unavailable',
+            'artist': 'Unknown Artist',
+            'image_url': url_for('static', filename='default_album.jpg'),
+            'album': 'Unknown',
+            'listeners': 'Unknown',
+            'playcount': 'Unknown',
+            'duration': 0,
+            'tags': []
+        }
 
 @views.route('/')
 def landing_page():
-    # Get the authorization URL from Spotify OAuth
-    auth_url = sp_oauth.get_authorize_url()
-    artist_info = get_random_artist_info()
-    song_info = get_random_song_info()
-    return render_template("landing_page.html",auth_url=auth_url, artist_info=artist_info, song_info=song_info)
+    """Render landing page with random artist and song"""
+    try:
+        auth_url = sp_oauth.get_authorize_url()
+        
+        # Get artist and song info with fallbacks
+        artist_info = get_random_artist_info() or get_fallback_data('artist')
+        song_info = get_random_song_info() or get_fallback_data('track')
+        
+        return render_template(
+            "landing_page.html",
+            auth_url=auth_url,
+            artist_info=artist_info,
+            song_info=song_info
+        )
+    except Exception as e:
+        logger.error(f"Error in landing page: {e}")
+        return render_template(
+            "landing_page.html",
+            auth_url=sp_oauth.get_authorize_url(),
+            artist_info=get_fallback_data('artist'),
+            song_info=get_fallback_data('track')
+        )
 
 def get_song_album_cover_url(song_name, artist_name, sp=None):
     """
