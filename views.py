@@ -6,7 +6,7 @@ import pickle
 import os
 import random
 import logging
-from config import sp_oauth, LASTFM_API_KEY, LASTFM_BASE_URL
+from config import sp_oauth, LASTFM_API_KEY
 
 views = Blueprint('views', __name__)
 
@@ -23,6 +23,8 @@ similarity_path = os.path.join(base_dir, 'similarity.pkl')
 # Load the .pkl files using the absolute paths
 music = pickle.load(open(df_path, 'rb'))
 similarity = pickle.load(open(similarity_path, 'rb'))
+
+LASTFM_BASE_URL = 'http://ws.audioscrobbler.com/2.0/'
 
 # Function to recommend songs
 def recommend_song(song_name):

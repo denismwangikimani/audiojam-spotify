@@ -13,7 +13,7 @@ SCOPE="user-top-read playlist-modify-private playlist-modify-public"
 # Last.fm Configuration
 LASTFM_API_KEY = "be4d22047902076b9cba05313cf51847"
 LASTFM_SHARED_SECRET = "38cc4d62e567b03c7c81aa8db1cc200b"
-LASTFM_API_BASE_URL = 'http://ws.audioscrobbler.com/2.0/'
+LASTFM_BASE_URL = 'http://ws.audioscrobbler.com/2.0/'
 
 # Set up the Spotify OAuth handler
 sp_oauth = SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID,
