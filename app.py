@@ -60,5 +60,5 @@ def refresh_token_if_needed():
         ensure_token_valid()
 
 if __name__ == '__main__':
-    # This block will only be entered if you run the app directly (not through Gunicorn)
+    # Uncomment the following line if you run the app directly (not through Gunicorn)
     app.run(debug=True, port=int(os.environ.get('PORT', 5000)))

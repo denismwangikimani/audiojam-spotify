@@ -2,3 +2,4 @@
 #similarity.pkl
 .cache
 kaggle_spotify_training_set/spotify_1000_sample.csv
+billboard_cache.sqlite

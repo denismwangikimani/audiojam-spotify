@@ -1,12 +1,12 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request
 import requests
 import spotipy
-#import billboard
 import pickle
 import os
 import random
 import logging
 from config import sp_oauth, LASTFM_API_KEY
+from bs4 import BeautifulSoup
 
 views = Blueprint('views', __name__)
 
@@ -25,6 +25,47 @@ music = pickle.load(open(df_path, 'rb'))
 similarity = pickle.load(open(similarity_path, 'rb'))
 
 LASTFM_BASE_URL = 'http://ws.audioscrobbler.com/2.0/'
+
+def scrape_billboard_charts():
+    url = "https://www.billboard.com/charts/hot-100/"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        songs = []
+        # Find all song entries (limit to top 10)
+        chart_items = soup.find_all("div", class_="o-chart-results-list-row-container")[:10]
+        
+        for idx, item in enumerate(chart_items, 1):
+            try:
+                # Extract title and artist
+                title_element = item.find("h3", class_="c-title")
+                artist_element = item.find("span", class_="c-label")
+                
+                # Extract image if available
+                image_element = item.find("img")
+                image_url = image_element['src'] if image_element else None
+                
+                if title_element and artist_element:
+                    songs.append({
+                        "rank": idx,
+                        "title": title_element.text.strip(),
+                        "artist": artist_element.text.strip(),
+                        "image": image_url or "static/default_album.jpg"
+                    })
+            except Exception as e:
+                print(f"Error processing song {idx}: {e}")
+                continue
+                
+        return songs
+    except Exception as e:
+        print(f"Error scraping Billboard charts: {e}")
+        return []
 
 # Function to recommend songs
 def recommend_song(song_name):
@@ -236,27 +277,9 @@ def show_top_items():
     user_profile = sp.current_user()
     username = user_profile['display_name']
 
-    # Fetch Spotify Global Top 50 playlist
-    global_top_50_id = '37i9dQZEVXbMDoHDwVN2tF'
-    
-    try:
-        playlist = sp.playlist(global_top_50_id)
-        top_chart_songs = []
-        
-        for idx, track in enumerate(playlist['tracks']['items'][:10], 1):
-            track_info = track['track']
-            song = {
-                "rank": idx,
-                "title": track_info['name'],
-                "artist": track_info['artists'][0]['name'],
-                "image": track_info['album']['images'][0]['url'] if track_info['album']['images'] else None,
-                "weeks": "N/A",
-                "peak": "N/A"  
-            }
-            top_chart_songs.append(song)
-    except Exception as e:
-        print(f"Error fetching Spotify charts: {e}")
-        top_chart_songs = []
+    # Fetch Billboard Hot 100 Chart
+    top_chart_songs = scrape_billboard_charts()
+
     
     # Handle time range selection
     time_range = request.form.get('time_range', 'medium_term')
