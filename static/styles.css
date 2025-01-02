@@ -174,3 +174,22 @@ button:hover {
     margin-top: 10px;
   }
 }
+
+.roast-section {
+  margin: 2rem 0;
+}
+
+.roast-card {
+  background-color: #282828;
+  padding: 2rem;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  text-align: center;
+  font-style: italic;
+}
+
+.roast-card p {
+  margin: 0;
+}

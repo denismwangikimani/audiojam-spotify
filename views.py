@@ -7,7 +7,6 @@ import random
 import logging
 from config import sp_oauth, LASTFM_API_KEY
 from bs4 import BeautifulSoup
-
 views = Blueprint('views', __name__)
 
 # Set up logging
@@ -26,6 +25,36 @@ similarity = pickle.load(open(similarity_path, 'rb'))
 
 LASTFM_BASE_URL = 'http://ws.audioscrobbler.com/2.0/'
 
+# Function to roast top songs using the Gemini API
+def roast_top_songs_with_gemini(songs):
+    gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+    gemini_api_key = "AIzaSyCJ4iYuf0Pq6xTjv91XElINsRE73VZ9gyQ"
+
+    prompt_text = f"Roast these top songs: {', '.join(songs)}"
+    payload = {
+        "contents": [
+            {
+                "parts": [{"text": prompt_text}]
+            }
+        ]
+    }
+
+    response = requests.post(
+        f"{gemini_url}?key={gemini_api_key}",
+        json=payload,
+        headers={"Content-Type": "application/json"}
+    )
+
+    if response.status_code == 200:
+        data = response.json()
+        if "contents" in data and data["contents"]:
+            return data["contents"][0]["parts"][0].get("text", "No roast available.")
+        else:
+            return "Gemini API returned an unexpected response format."
+    else:
+        return f"Gemini API request failed with status {response.status_code}: {response.text}"
+
+# function to scrape Billboard charts
 def scrape_billboard_charts():
     url = "https://www.billboard.com/charts/hot-100/"
     headers = {
@@ -288,6 +317,10 @@ def show_top_items():
     top_artists = sp.current_user_top_artists(limit=10, time_range=time_range)['items']
     top_tracks = sp.current_user_top_tracks(limit=10, time_range=time_range)['items']
 
+    top_song_names = [track['name'] for track in top_tracks]
+    
+    roast_message = roast_top_songs_with_gemini(top_song_names)
+
     # Pass music list to the template
     music_list = music['song'].values
 
@@ -349,6 +382,7 @@ def show_top_items():
         artists=top_artists,
         tracks=top_tracks,
         music_list=music_list,
+        roast_message=roast_message,
         recommendations_with_posters=recommendations_with_posters,
-        success_message=success_message
+        success_message=success_message,
     )

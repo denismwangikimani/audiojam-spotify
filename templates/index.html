@@ -24,12 +24,7 @@
             <li>
               <img src="{{ song.image }}" alt="{{ song.title }}" />
               <div>
-                <strong>{{ song.rank }}. {{ song.title }}</strong> by {{
-                song.artist }}
-                <p>
-                  Weeks on Chart: {{ song.weeks }} | Peak Position: {{ song.peak
-                  }}
-                </p>
+                <strong>{{ song.rank }}. {{ song.title }}</strong>
               </div>
             </li>
             {% endfor %}
@@ -41,12 +36,7 @@
             <li>
               <img src="{{ song.image }}" alt="{{ song.title }}" />
               <div>
-                <strong>{{ song.rank }}. {{ song.title }}</strong> by {{
-                song.artist }}
-                <p>
-                  Weeks on Chart: {{ song.weeks }} | Peak Position: {{ song.peak
-                  }}
-                </p>
+                <strong>{{ song.rank }}. {{ song.title }}</strong>
               </div>
             </li>
             {% endfor %}
@@ -156,6 +146,19 @@
         </div>
       </div>
 
+      <!-- Show the users roast -->
+      <!-- After the top tracks section -->
+      {% if roast_message %}
+      <div class="max-w-4xl mx-auto mt-8 mb-8">
+        <div class="bg-white shadow-lg rounded-lg p-6">
+          <h3 class="text-xl font-bold mb-4">
+            🎭 AI's Roast of Your Music Taste
+          </h3>
+          <p class="text-gray-700 italic">{{ roast_message }}</p>
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Song Recommendation Form and Save Recommended Songs Button -->
       <div class="form-container">
         <form
@@ -179,9 +182,7 @@
           class="form-flex"
         >
           <input type="hidden" name="playlist_type" value="recommendations" />
-          <button type="submit">
-            Save Recommendations to Spotify
-          </button>
+          <button type="submit">Save Recommendations to Spotify</button>
         </form>
       </div>
 

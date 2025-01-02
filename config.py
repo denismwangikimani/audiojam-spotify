@@ -23,3 +23,11 @@ sp_oauth = SpotifyOAuth(client_id=SPOTIPY_CLIENT_ID,
 
 # Create an instance of Spotipy with token
 spotify = spotipy.Spotify(auth_manager=sp_oauth)
+
+# OpenAI Configuration
+OPENAI_API_KEY = "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"
+OPENAI_API_BASE = "https://api.openai.com/v1"
+OPENAI_MODEL = "gpt-4o"  # or "gpt-3.5-turbo" depending on your needs
+
+#Gemini api
+GEMINI_API_KEY = "AIzaSyCJ4iYuf0Pq6xTjv91XElINsRE73VZ9gyQ"
