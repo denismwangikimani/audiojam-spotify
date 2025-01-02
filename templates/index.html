@@ -147,14 +147,13 @@
       </div>
 
       <!-- Show the users roast -->
-      <!-- After the top tracks section -->
       {% if roast_message %}
-      <div class="max-w-4xl mx-auto mt-8 mb-8">
-        <div class="bg-white shadow-lg rounded-lg p-6">
-          <h3 class="text-xl font-bold mb-4">
-            🎭 AI's Roast of Your Music Taste
-          </h3>
-          <p class="text-gray-700 italic">{{ roast_message }}</p>
+      <div class="top-items">
+        <h2>Roast of Your Music Taste</h2>
+        <div class="grid-container">
+          <div class="card roast-card">
+            <p>{{ roast_message }}</p>
+          </div>
         </div>
       </div>
       {% endif %}
