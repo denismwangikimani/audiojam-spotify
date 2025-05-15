@@ -59,6 +59,12 @@ def refresh_token_if_needed():
     if 'token_info' in session:
         ensure_token_valid()
 
+@app.route('/healthz')
+def health_check():
+    # Basic health check - if the app is running, return 200 OK
+    app.logger.info('Health check endpoint accessed')
+    return '', 200
+
 if __name__ == '__main__':
     # Uncomment the following line if you run the app directly (not through Gunicorn)
     app.run(debug=True, port=int(os.environ.get('PORT', 5000)))
